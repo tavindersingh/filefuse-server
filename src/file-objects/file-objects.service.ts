@@ -5,6 +5,7 @@ import { nanoid } from 'nanoid';
 import { StorageService } from 'src/storage/storage.service';
 import { LessThanOrEqual, Repository } from 'typeorm';
 import { CreateFileObjectDto } from './dto/create-file-object.dto';
+import { QueryFileObjectDto } from './dto/query-file-object.dto';
 import { FileObject } from './entities/file-object.entity';
 
 @Injectable()
@@ -25,8 +26,8 @@ export class FileObjectsService {
     return this.fileObjectRepository.save(createFileObjectDto);
   }
 
-  async findAll(): Promise<FileObject[]> {
-    return await this.fileObjectRepository.find();
+  async findAll(queryFileObjectDto: QueryFileObjectDto): Promise<FileObject[]> {
+    return await this.fileObjectRepository.find({ where: queryFileObjectDto });
   }
 
   async findOne(id: number): Promise<FileObject> {
@@ -35,7 +36,25 @@ export class FileObjectsService {
     });
   }
 
-  async remove(id: number) {
+  async remove(id: number, userId: string): Promise<FileObject> {
+    const fileObject = await this.findOne(id);
+
+    if (!fileObject) {
+      throw new NotFoundException('File not found');
+    }
+
+    if (fileObject.userId !== userId) {
+      throw new NotFoundException('Unauthorized Request');
+    }
+
+    await this.storageService.deleteFile(fileObject.s3Key);
+
+    await this.fileObjectRepository.delete(id);
+
+    return fileObject;
+  }
+
+  async removeWithoutUserId(id: number): Promise<FileObject> {
     const fileObject = await this.findOne(id);
 
     if (!fileObject) {
@@ -63,7 +82,7 @@ export class FileObjectsService {
     for (const entry of expiredEntries) {
       await this.storageService.deleteFile(entry.s3Key);
 
-      await this.remove(entry.id);
+      await this.removeWithoutUserId(entry.id);
     }
   }
 }

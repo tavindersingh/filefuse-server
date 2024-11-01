@@ -21,6 +21,9 @@ export class FileObject extends BaseEntity {
   @Column({ name: 'url_key', unique: true })
   urlKey: string;
 
+  @Column({ name: 'user_id' })
+  userId: string;
+
   @Column({ name: 'downloads_count', default: 1 })
   downloadsCount: number;
 

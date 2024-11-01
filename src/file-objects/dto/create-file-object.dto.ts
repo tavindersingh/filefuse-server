@@ -7,6 +7,7 @@ export class CreateFileObjectDto {
   @ApiProperty()
   s3Key: string;
 
+  userId: string;
   urlKey: string;
   downloadsCount: number;
   autoDelete: boolean;
