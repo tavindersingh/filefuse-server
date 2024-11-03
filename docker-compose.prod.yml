@@ -1,0 +1,63 @@
+services:
+  filefuse_api_prod:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+
+    environment:
+      - PORT=${PORT}
+      - NODE_ENV=${NODE_ENV}
+      - B2_ACCESS_KEY_ID=${B2_ACCESS_KEY_ID}
+      - B2_SECRET_ACCESS_KEY=${B2_SECRET_ACCESS_KEY}
+      - B2_REGION=${B2_REGION}
+      - B2_BUCKET=${B2_BUCKET}
+      - B2_ENDPOINT=${B2_ENDPOINT}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - MAX_FILE_SIZE_LIMIT=${MAX_FILE_SIZE_LIMIT}
+    volumes:
+      - ./src:/app/src
+  mysql_db:
+    image: mysql
+    ports:
+      - "${MYSQL_TCP_PORT}:${MYSQL_TCP_PORT}"
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}`
+      - MYSQL_TCP_PORT=${MYSQL_TCP_PORT}
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  nginx:
+    restart: always
+    build:
+      dockerfile: Dockerfile.nginx
+      context: ./nginx
+    ports:
+      - '80:80'
+    depends_on:
+      - filefuse_api_prod
+  # letsencrypt:
+  #   image: certbot/certbot
+  #   volumes:
+  #     - ./certbot/conf:/etc/letsencrypt
+  #     - ./certbot/www:/var/www/certbot
+  #     - "/tmp/acme_challenge:/tmp/acme_challenge"
+  #   command: sh -c "certbot certonly --webroot -w /tmp/acme_challenge -d api.filefuse.in --text --agree-tos --email tavinder123singh@gmail.com --rsa-key-size 4096 --verbose --keep-until-expiring --preferred-challenges=http"
+
+  #   entrypoint: /bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'
+  #   networks:
+  #     - nginx-certbot
+  # networks:
+  #   nginx-certbot:
+  #     driver: bridge
