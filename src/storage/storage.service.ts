@@ -4,14 +4,12 @@ import {
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createWriteStream } from 'fs';
-import path from 'path';
+import { Response } from 'express';
 import { Readable } from 'stream';
 import { v4 as uuidv4 } from 'uuid';
-import { sdkStreamMixin } from '@smithy/util-stream-node';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 @Injectable()
 export class StorageService {
@@ -38,6 +36,7 @@ export class StorageService {
       Bucket: this.bucketName,
       Key: `${uuidv4()}-${fileName}`,
       ContentType: 'video/mp4',
+      ContentLength: this.configService.get<number>('MAX_FILE_SIZE_LIMIT'),
     });
 
     return await getSignedUrl(this.s3Client, command, {
@@ -71,29 +70,36 @@ export class StorageService {
     }
   }
 
-  async downloadFileFromS3(key: string) {
+  async downloadFileFromS3(
+    key: string,
+    fileName: string,
+    response: Response,
+    onDownloadFinished: () => void,
+  ) {
+    console.log('downloadFileFromS3', key);
     try {
       const command = new GetObjectCommand({
         Bucket: this.bucketName,
         Key: key,
       });
 
-      console.log(__dirname);
+      const { Body } = await this.s3Client.send(command);
 
-      const response = await this.s3Client.send(command);
-      const downloadPath = path.join(__dirname, 'temp', key);
-      const writeStream = createWriteStream(downloadPath);
-
-      console.log(downloadPath);
-
-      const nodeStream = sdkStreamMixin(response.Body as Readable);
-
-      return new Promise<string>((resolve, reject) => {
-        nodeStream
-          .pipe(writeStream)
-          .on('error', reject)
-          .on('close', () => resolve(downloadPath));
-      });
+      if (Body instanceof Readable) {
+        response.set({
+          'Content-Type': 'application/octet-stream',
+          'Content-Disposition': `attachment; filename="${fileName}"`,
+        });
+        Body.pipe(response)
+          .on('finish', async () => {
+            onDownloadFinished();
+          })
+          .on('error', (error) => {
+            console.error('Error piping response:', error);
+          });
+      } else {
+        throw new Error('Error: Body is not a ReadableStream');
+      }
     } catch (error) {
       console.error('Error downloading file from S3:', error);
     }

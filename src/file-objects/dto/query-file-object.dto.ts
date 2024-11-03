@@ -1,3 +1,9 @@
+import { ApiPropertyOptional } from '@nestjs/swagger';
+
 export class QueryFileObjectDto {
-  userId: string;
+  id?: number;
+  userId?: string;
+
+  @ApiPropertyOptional()
+  urlKey?: string;
 }

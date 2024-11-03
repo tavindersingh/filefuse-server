@@ -6,6 +6,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.useLogger(['log']);
+  app.enableCors();
 
   const config = new DocumentBuilder()
     .setTitle('FileFuse APIs')
