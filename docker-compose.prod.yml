@@ -3,7 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.prod
-
+    ports:
+      - "3002:3002"
     environment:
       - PORT=${PORT}
       - NODE_ENV=${NODE_ENV}
@@ -37,6 +38,17 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - filefuse_api_prod
 
 #   nginx:
 #     restart: always
