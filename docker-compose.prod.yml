@@ -38,29 +38,29 @@ services:
       timeout: 5s
       retries: 5
 
-  nginx:
-    restart: always
-    build:
-      dockerfile: Dockerfile.nginx
-      context: ./nginx
-    ports:
-      - '80:80'
-      - "443:443"
-    volumes:
-      - ./nginx:/etc/nginx/conf.d
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
-    depends_on:
-      - filefuse_api_prod
-  letsencrypt:
-    image: certbot/certbot
-    volumes:
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
-    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
-    networks:
-      - nginx-certbot
-networks:
-  nginx-certbot:
-    driver: bridge
+#   nginx:
+#     restart: always
+#     build:
+#       dockerfile: Dockerfile.nginx
+#       context: ./nginx
+#     ports:
+#       - '80:80'
+#       - "443:443"
+#     volumes:
+#       - ./nginx:/etc/nginx/conf.d
+#       - ./certbot/conf:/etc/letsencrypt
+#       - ./certbot/www:/var/www/certbot
+#     depends_on:
+#       - filefuse_api_prod
+#   letsencrypt:
+#     image: certbot/certbot
+#     volumes:
+#       - ./certbot/conf:/etc/letsencrypt
+#       - ./certbot/www:/var/www/certbot
+#     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+#     command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+#     networks:
+#       - nginx-certbot
+# networks:
+#   nginx-certbot:
+#     driver: bridge

@@ -58,5 +58,6 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 docker-compose.override.yml
 docker-compose.dev.yml
+docker-compose.prod.yml
 *.docker
 *.pem
