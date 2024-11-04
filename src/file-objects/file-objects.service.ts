@@ -74,7 +74,7 @@ export class FileObjectsService {
       query.userId = queryFileObjectDto.userId;
     }
 
-    query.expiryAt = LessThanOrEqual(new Date());
+    query.expiryAt = MoreThanOrEqual(new Date());
     query.downloadsCount = MoreThanOrEqual(1);
 
     const fileObject = await this.fileObjectRepository.findOne({
