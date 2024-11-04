@@ -25,13 +25,13 @@ services:
   mysql_db:
     image: mysql
     ports:
-      - "${MYSQL_TCP_PORT}:${MYSQL_TCP_PORT}"
+      - "3307:3307"
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
       - MYSQL_DATABASE=${MYSQL_DATABASE}
       - MYSQL_USER=${MYSQL_USER}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}`
-      - MYSQL_TCP_PORT=${MYSQL_TCP_PORT}
+      - MYSQL_TCP_PORT=3307
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 10s
@@ -45,19 +45,22 @@ services:
       context: ./nginx
     ports:
       - '80:80'
+      - "443:443"
+    volumes:
+      - ./nginx:/etc/nginx/conf.d
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
     depends_on:
       - filefuse_api_prod
-  # letsencrypt:
-  #   image: certbot/certbot
-  #   volumes:
-  #     - ./certbot/conf:/etc/letsencrypt
-  #     - ./certbot/www:/var/www/certbot
-  #     - "/tmp/acme_challenge:/tmp/acme_challenge"
-  #   command: sh -c "certbot certonly --webroot -w /tmp/acme_challenge -d api.filefuse.in --text --agree-tos --email tavinder123singh@gmail.com --rsa-key-size 4096 --verbose --keep-until-expiring --preferred-challenges=http"
-
-  #   entrypoint: /bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'
-  #   networks:
-  #     - nginx-certbot
-  # networks:
-  #   nginx-certbot:
-  #     driver: bridge
+  letsencrypt:
+    image: certbot/certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+    networks:
+      - nginx-certbot
+networks:
+  nginx-certbot:
+    driver: bridge
