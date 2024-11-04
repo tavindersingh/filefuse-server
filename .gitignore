@@ -61,3 +61,5 @@ docker-compose.dev.yml
 docker-compose.prod.yml
 *.docker
 *.pem
+
+ecosystem.config.js

@@ -36,7 +36,6 @@ export class StorageService {
       Bucket: this.bucketName,
       Key: `${uuidv4()}-${fileName}`,
       ContentType: 'video/mp4',
-      ContentLength: this.configService.get<number>('MAX_FILE_SIZE_LIMIT'),
     });
 
     return await getSignedUrl(this.s3Client, command, {
